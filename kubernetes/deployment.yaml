@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: k8s-config-demo
+  name: k8s-config-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: k8s-config-demo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: k8s-config-demo
+    spec:
+      containers:
+      - image: k8s-config-demo:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          initialDelaySeconds: 10
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8080
+        name: app
+        env:
+          - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_BOOT_CONTEXT_CONFIG
+            value: TRACE
+          - name: SPRING_CONFIG_LOCATION
+            value: classpath:/,file:./config/application-override.yml,file:./config/*/application-override.yml
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          initialDelaySeconds: 5
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8080
+        volumeMounts:
+          - name: app-config
+            mountPath: /workspace/config
+            readOnly: true
+      volumes:
+        - name: app-config
+          configMap:
+            name: app-config
+            items:
+            - key: application-override.yml
+              path: application-override.yml

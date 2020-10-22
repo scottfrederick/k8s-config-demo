@@ -1,0 +1,26 @@
+apiVersion: skaffold/v2beta6
+kind: Config
+metadata:
+  name: k8s-config-demo
+build:
+  tagPolicy:
+    sha256: {}
+  artifacts:
+  - image: k8s-config-demo
+    custom:
+      buildCommand: ./mvnw spring-boot:build-image -DskipTests -Dspring-boot.build-image.imageName=$IMAGE
+      dependencies:
+        paths:
+          - src
+          - pom.xml
+deploy:
+  kubectl:
+    manifests:
+    - kubernetes/configmap.yaml
+    - kubernetes/deployment.yaml
+    - kubernetes/service.yaml
+portForward:
+  - resourceType: service
+    resourceName: k8s-config-demo
+    port: 80
+    localPort: 8080
