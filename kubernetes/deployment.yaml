@@ -26,8 +26,8 @@ spec:
         env:
           - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_BOOT_CONTEXT_CONFIG
             value: TRACE
-          - name: SPRING_CONFIG_LOCATION
-            value: classpath:/,file:./config/application-override.yml,file:./config/*/application-override.yml
+          - name: SPRING_CONFIG_IMPORT
+            value: configtree:/workspace/app-config/
         ports:
         - containerPort: 8080
         readinessProbe:
@@ -36,13 +36,22 @@ spec:
             path: /actuator/health/readiness
             port: 8080
         volumeMounts:
-          - name: app-config
-            mountPath: /workspace/config
+          - name: projected-volume
+            mountPath: /workspace/app-config
             readOnly: true
       volumes:
-        - name: app-config
-          configMap:
-            name: app-config
-            items:
-            - key: application-override.yml
-              path: application-override.yml
+        - name: projected-volume
+          projected:
+            sources:
+              - secret:
+                  name: user
+                  items:
+                    - key: user
+                      path: credentials/username
+              - secret:
+                  name: password
+                  items:
+                    - key: password
+                      path: credentials/password
+              - configMap:
+                  name: app-config
